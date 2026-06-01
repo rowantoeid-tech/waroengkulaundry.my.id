@@ -1,0 +1,95 @@
+.cart-line {
+  padding-bottom: 1rem;
+  border-bottom: 1px dashed var(--color-border);
+  list-style: none;
+}
+
+.cart-line--compact {
+  padding-bottom: 0.75rem;
+}
+
+.cart-line__tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  margin-bottom: 0.35rem;
+}
+
+.cart-line__tag--product {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.cart-line__tag--laundry {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.cart-line__name {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.cart-line__unit {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  margin-top: 0.15rem;
+}
+
+.cart-line__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.65rem;
+  gap: 0.5rem;
+}
+
+.cart-line__remove {
+  border: none;
+  background: none;
+  color: #b91c1c;
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cart-line__total {
+  margin-top: 0.35rem;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  text-align: right;
+  font-size: 0.95rem;
+}
+
+.cart-line .qty-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fafaf9;
+  border-radius: 8px;
+  padding: 0.2rem;
+}
+
+.cart-line .qty-control button {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.cart-line .qty-control span {
+  min-width: 1.5rem;
+  text-align: center;
+  font-weight: 700;
+}

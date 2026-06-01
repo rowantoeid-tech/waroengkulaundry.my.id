@@ -1,0 +1,173 @@
+.laundry__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 600px) {
+  .laundry__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .laundry__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.laundry-card {
+  position: relative;
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.15rem;
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.laundry-card__badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+}
+
+.laundry-card__icon {
+  font-size: 2rem;
+  margin-bottom: 0.25rem;
+}
+
+.laundry-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.laundry-card__desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-ink-soft);
+  line-height: 1.45;
+  flex: 1;
+}
+
+.laundry-card__meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  padding: 0.65rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 0.75rem;
+}
+
+.laundry-card__meta dt {
+  color: var(--color-muted);
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+.laundry-card__meta dd {
+  margin: 0;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.laundry-card__meta dd span {
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+.laundry-card__order {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  margin-top: 0.35rem;
+}
+
+.laundry-card__order label {
+  flex: 1;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.laundry-card__order input {
+  padding: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-weight: 700;
+  width: 100%;
+}
+
+.laundry-card__btn {
+  flex-shrink: 0;
+  padding: 0.6rem 0.85rem;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.laundry-card__btn:hover {
+  background: #1d4ed8;
+}
+
+.laundry__flow {
+  margin-top: 2rem;
+  padding: 1.25rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 2px dashed #93c5fd;
+}
+
+.laundry__flow h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.laundry__flow ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.laundry__flow li {
+  padding: 0.35rem 0.65rem;
+  background: #eff6ff;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1e40af;
+}
+
+.laundry__flow li:not(:last-child)::after {
+  content: '→';
+  margin-left: 0.5rem;
+  color: #93c5fd;
+}
+
+.laundry__flow p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}
