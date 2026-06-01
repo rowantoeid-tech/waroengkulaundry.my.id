@@ -71,11 +71,16 @@ Pastikan file `.env` **tidak** ikut commit (sudah ada di `.gitignore`).
 
 | Pengaturan | Nilai |
 |------------|--------|
-| **Framework Preset** | Vite |
-| **Root Directory** | `apps/web` ← penting (monorepo) |
-| **Build Command** | `npm run build` (default) |
-| **Output Directory** | `dist` (default) |
-| **Install Command** | `npm install` (default) |
+| **Root Directory** | *(kosongkan / `.` — akar repo)* |
+| **Framework Preset** | Vite (atau Other — ikuti `vercel.json` di root) |
+
+Repo ini sudah punya **`vercel.json`** dan **`package.json`** di **akar proyek** yang otomatis mem-build `apps/web`. Vercel akan memakai:
+
+- `installCommand` → `npm run install:web`
+- `buildCommand` → `npm run build:web`
+- `outputDirectory` → `apps/web/dist`
+
+**Alternatif:** set **Root Directory** = `apps/web` saja (tanpa skrip root) — gunakan jika deploy dari subfolder lebih mudah.
 
 5. Klik **Deploy**. Tunggu sampai status **Ready**.
 6. Anda dapat URL sementara, misalnya `https://waroengku-web.vercel.app`.
@@ -184,7 +189,7 @@ Pilih **satu** saja agar DNS tidak bentrok (jangan arahkan domain ke Vercel dan 
 |--------|----------|--------|
 | Domain tidak load | DNS belum propagasi | Tunggu 1–24 jam; cek [dnschecker.org](https://dnschecker.org) untuk `waroengkulaundry.my.id` |
 | Halaman Rumahweb lama | A record masih ke IP hosting lama | Hapus A lama, pasang A/CNAME dari Vercel/Netlify |
-| Deploy gagal | Root directory salah | Pastikan `apps/web`, bukan akar repo |
+| Deploy gagal | Root / build salah | Pakai akar repo + `vercel.json` root, **atau** Root Directory = `apps/web` |
 | 404 di subpath | Routing SPA | Sudah ada `vercel.json` / `netlify.toml` + `.htaccess` di `public/` |
 
 ### Build gagal di cloud
@@ -221,7 +226,9 @@ Arahkan keduanya ke satu versi utama di pengaturan domain platform (**Redirect**
 
 | File | Fungsi |
 |------|--------|
-| `apps/web/vercel.json` | Redirect SPA untuk Vercel |
+| `vercel.json` (root) | Build monorepo → `apps/web/dist` |
+| `package.json` (root) | Skrip `build:web`, `install:web` |
+| `apps/web/vercel.json` | Jika Root Directory Vercel = `apps/web` |
 | `apps/web/netlify.toml` | Build & redirect untuk Netlify |
 | `apps/web/public/.htaccess` | Hanya jika upload manual ke Rumahweb/cPanel |
 
