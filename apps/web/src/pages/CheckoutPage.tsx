@@ -14,52 +14,41 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<string>("QRIS");
 
   const cartItems: CartItem[] = [
-    {
-      id: 1,
-      name: "Beras Premium 5 Kg",
-      category: "Sembako",
-      qty: 1,
-      price: 68000,
-    },
-    {
-      id: 2,
-      name: "Telur Ayam 1 Kg",
-      category: "Sembako",
-      qty: 1,
-      price: 28000,
-    },
-    {
-      id: 3,
-      name: "Laundry Reguler",
-      category: "Laundry",
-      qty: 3,
-      price: 7000,
-    },
+    { id: 1, name: "Beras Premium 5 Kg", category: "Sembako", qty: 1, price: 68000 },
+    { id: 2, name: "Telur Ayam 1 Kg", category: "Sembako", qty: 1, price: 28000 },
+    { id: 3, name: "Laundry Reguler", category: "Laundry", qty: 3, price: 7000 },
   ];
 
-  const formatRupiah = (value: number) => {
-    return new Intl.NumberFormat("id-ID", {
+  const formatRupiah = (value: number) =>
+    new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
       minimumFractionDigits: 0,
     }).format(value);
-  };
 
   const subtotal = useMemo(() => {
-    return cartItems.reduce((total, item) => {
-      return total + item.qty * item.price;
-    }, 0);
-  }, []);
+    return cartItems.reduce((total, item) => total + item.qty * item.price, 0);
+  }, [cartItems]);
 
-  const shippingCost = useMemo(() => {
-    if (distance <= 2) {
-      return 0;
-    }
-
+  const ongkirAntar = useMemo(() => {
+    if (distance <= 2) return 0;
     return Math.ceil(distance) * 2500;
   }, [distance]);
 
-  const grandTotal = subtotal + shippingCost;
+  const totalEstimasi = subtotal + ongkirAntar;
+
+  const handleCheckDistance = () => {
+    if (!address.trim()) {
+      alert("Silakan isi alamat pengiriman terlebih dahulu.");
+      return;
+    }
+
+    alert(
+      distance <= 2
+        ? "Jarak maksimal 2 KM. Ongkir gratis."
+        : `Jarak ${distance} KM. Ongkir ${formatRupiah(ongkirAntar)}.`
+    );
+  };
 
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-8">
@@ -77,7 +66,7 @@ export default function CheckoutPage() {
           <section className="space-y-6 lg:col-span-2">
             <div className="rounded-2xl bg-white p-6 shadow-sm">
               <h2 className="mb-4 text-xl font-semibold text-gray-900">
-                Alamat & Jarak Pengiriman
+                Alamat Pengiriman
               </h2>
 
               <div className="space-y-4">
@@ -86,7 +75,7 @@ export default function CheckoutPage() {
                     htmlFor="address"
                     className="mb-2 block text-sm font-medium text-gray-700"
                   >
-                    Alamat Pelanggan
+                    Alamat Lengkap
                   </label>
 
                   <textarea
@@ -94,7 +83,7 @@ export default function CheckoutPage() {
                     value={address}
                     onChange={(event) => setAddress(event.target.value)}
                     rows={4}
-                    placeholder="Masukkan alamat lengkap pelanggan"
+                    placeholder="Contoh: Jl. Rawalele, Ciputat, Tangerang Selatan"
                     className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
                   />
                 </div>
@@ -104,7 +93,7 @@ export default function CheckoutPage() {
                     htmlFor="distance"
                     className="mb-2 block text-sm font-medium text-gray-700"
                   >
-                    Simulasi Jarak dari Toko dalam KM
+                    Jarak Pengiriman dari Toko dalam KM
                   </label>
 
                   <input
@@ -121,19 +110,30 @@ export default function CheckoutPage() {
                   />
                 </div>
 
+                <button
+                  type="button"
+                  onClick={handleCheckDistance}
+                  className="w-full rounded-xl bg-green-600 py-3 font-semibold text-white transition hover:bg-green-700"
+                >
+                  Cek Jarak & Ongkir
+                </button>
+
                 <div
                   className={`rounded-xl p-4 text-sm ${
-                    shippingCost === 0
+                    ongkirAntar === 0
                       ? "bg-green-50 text-green-700"
                       : "bg-yellow-50 text-yellow-700"
                   }`}
                 >
-                  {shippingCost === 0 ? (
-                    <p>Ongkir gratis untuk jarak maksimal 2 KM dari toko.</p>
+                  {ongkirAntar === 0 ? (
+                    <p>
+                      Ongkir Antar: <strong>Gratis</strong> untuk jarak maksimal
+                      2 KM.
+                    </p>
                   ) : (
                     <p>
-                      Ongkir dikenakan {formatRupiah(2500)} per KM karena jarak
-                      lebih dari 2 KM.
+                      Ongkir Antar: <strong>{formatRupiah(ongkirAntar)}</strong>{" "}
+                      berdasarkan rumus {distance} KM × Rp 2.500.
                     </p>
                   )}
                 </div>
@@ -162,7 +162,7 @@ export default function CheckoutPage() {
                     <div>
                       <p className="font-semibold text-gray-900">QRIS</p>
                       <p className="text-sm text-gray-500">
-                        Gopay, OVO, Dana
+                        GoPay, OVO, DANA
                       </p>
                     </div>
                   </div>
@@ -230,25 +230,23 @@ export default function CheckoutPage() {
 
             <div className="space-y-3 border-b border-gray-200 pb-4 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Subtotal</span>
+                <span className="text-gray-600">Subtotal Belanja</span>
                 <span className="font-medium text-gray-900">
                   {formatRupiah(subtotal)}
                 </span>
               </div>
 
               <div className="flex justify-between">
-                <span className="text-gray-600">Jarak</span>
+                <span className="text-gray-600">Jarak Pengiriman</span>
                 <span className="font-medium text-gray-900">
                   {distance} KM
                 </span>
               </div>
 
               <div className="flex justify-between">
-                <span className="text-gray-600">Ongkir</span>
+                <span className="text-gray-600">Ongkir Antar</span>
                 <span className="font-medium text-gray-900">
-                  {shippingCost === 0
-                    ? "Gratis"
-                    : formatRupiah(shippingCost)}
+                  {ongkirAntar === 0 ? "Gratis" : formatRupiah(ongkirAntar)}
                 </span>
               </div>
 
@@ -260,9 +258,11 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <div className="mt-4 flex justify-between text-lg font-bold text-gray-900">
-              <span>Total</span>
-              <span>{formatRupiah(grandTotal)}</span>
+            <div className="mt-4 rounded-xl bg-green-50 p-4">
+              <div className="flex justify-between text-lg font-bold text-gray-900">
+                <span>Total Estimasi</span>
+                <span>{formatRupiah(totalEstimasi)}</span>
+              </div>
             </div>
 
             <button
@@ -275,7 +275,7 @@ export default function CheckoutPage() {
 
             {!address.trim() && (
               <p className="mt-3 text-center text-xs text-red-500">
-                Isi alamat pelanggan terlebih dahulu.
+                Isi alamat pengiriman terlebih dahulu.
               </p>
             )}
           </aside>
