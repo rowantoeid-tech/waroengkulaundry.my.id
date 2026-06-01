@@ -21,37 +21,16 @@ export default function CheckoutPage() {
   const [manualDistance, setManualDistance] = useState<number>(0);
   const [gpsDistance, setGpsDistance] = useState<number | null>(null);
   const [customerLatitude, setCustomerLatitude] = useState<number | null>(null);
-  const [customerLongitude, setCustomerLongitude] = useState<number | null>(
-    null
-  );
-  const [locationStatus, setLocationStatus] =
-    useState<LocationStatus>("idle");
+  const [customerLongitude, setCustomerLongitude] = useState<number | null>(null);
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
   const [locationMessage, setLocationMessage] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("QRIS");
   const [copyMessage, setCopyMessage] = useState<string>("");
 
   const cartItems: CartItem[] = [
-    {
-      id: 1,
-      name: "Beras Premium 5 Kg",
-      category: "Sembako",
-      qty: 1,
-      price: 68000,
-    },
-    {
-      id: 2,
-      name: "Telur Ayam 1 Kg",
-      category: "Sembako",
-      qty: 1,
-      price: 28000,
-    },
-    {
-      id: 3,
-      name: "Laundry Reguler",
-      category: "Laundry",
-      qty: 3,
-      price: 7000,
-    },
+    { id: 1, name: "Beras Premium 5 Kg", category: "Sembako", qty: 1, price: 68000 },
+    { id: 2, name: "Telur Ayam 1 Kg", category: "Sembako", qty: 1, price: 28000 },
+    { id: 3, name: "Laundry Reguler", category: "Laundry", qty: 3, price: 7000 },
   ];
 
   const formatRupiah = (value: number): string => {
@@ -89,9 +68,7 @@ export default function CheckoutPage() {
   const activeDistance = gpsDistance !== null ? gpsDistance : manualDistance;
 
   const subtotal = useMemo(() => {
-    return cartItems.reduce((total, item) => {
-      return total + item.qty * item.price;
-    }, 0);
+    return cartItems.reduce((total, item) => total + item.qty * item.price, 0);
   }, []);
 
   const ongkirAntar = useMemo(() => {
@@ -103,14 +80,13 @@ export default function CheckoutPage() {
   }, [activeDistance]);
 
   const totalEstimasi = subtotal + ongkirAntar;
+  const isCheckoutDisabled = address.trim() === "" && gpsDistance === null;
 
   const handleUseCurrentLocation = (): void => {
     if (!navigator.geolocation) {
       setGpsDistance(null);
       setLocationStatus("error");
-      setLocationMessage(
-        "Browser Anda tidak mendukung GPS. Silakan isi jarak manual."
-      );
+      setLocationMessage("Browser Anda tidak mendukung GPS. Silakan isi jarak manual.");
       return;
     }
 
@@ -133,16 +109,12 @@ export default function CheckoutPage() {
         setCustomerLongitude(userLon);
         setGpsDistance(Number(distance.toFixed(2)));
         setLocationStatus("success");
-        setLocationMessage(
-          "Lokasi berhasil didapatkan. Ongkir diperbarui otomatis."
-        );
+        setLocationMessage("Lokasi berhasil didapatkan. Ongkir diperbarui otomatis.");
       },
       () => {
         setGpsDistance(null);
         setLocationStatus("error");
-        setLocationMessage(
-          "GPS ditolak atau gagal mengambil lokasi. Silakan isi jarak manual."
-        );
+        setLocationMessage("GPS ditolak atau gagal mengambil lokasi. Silakan isi jarak manual.");
       },
       {
         enableHighAccuracy: true,
@@ -178,9 +150,7 @@ export default function CheckoutPage() {
     <main className="min-h-screen bg-gray-100 px-4 py-8">
       <div className="mx-auto max-w-6xl">
         <header className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Checkout Waroengku
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900">Checkout Waroengku</h1>
           <p className="mt-2 text-sm text-gray-600">
             Toko sembako & laundry — Jl. Sumatra No. 79, Jombang, Ciputat
           </p>
@@ -195,13 +165,9 @@ export default function CheckoutPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label
-                    htmlFor="address"
-                    className="mb-2 block text-sm font-medium text-gray-700"
-                  >
+                  <label htmlFor="address" className="mb-2 block text-sm font-medium text-gray-700">
                     Alamat Lengkap
                   </label>
-
                   <textarea
                     id="address"
                     value={address}
@@ -218,12 +184,10 @@ export default function CheckoutPage() {
                   disabled={locationStatus === "loading"}
                   className="w-full rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 px-4 py-3 font-semibold text-white shadow-sm transition hover:from-green-700 hover:to-emerald-600 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {locationStatus === "loading"
-                    ? "Mengambil Posisi..."
-                    : "📍 Gunakan Posisi Saya Saat Ini"}
+                  {locationStatus === "loading" ? "Mengambil Posisi..." : "📍 Gunakan Posisi Saya Saat Ini"}
                 </button>
 
-                {locationMessage && (
+                {locationMessage !== "" ? (
                   <div
                     className={`rounded-xl p-4 text-sm ${
                       locationStatus === "success"
@@ -235,29 +199,24 @@ export default function CheckoutPage() {
                   >
                     <p>{locationMessage}</p>
                   </div>
-                )}
+                ) : null}
 
-                {customerLatitude !== null && customerLongitude !== null && (
+                {customerLatitude !== null && customerLongitude !== null ? (
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
                     <p>
                       Koordinat pelanggan: {customerLatitude.toFixed(5)},{" "}
                       {customerLongitude.toFixed(5)}
                     </p>
                     <p className="mt-1">
-                      Jarak GPS dari toko:{" "}
-                      <strong>{activeDistance.toFixed(2)} KM</strong>
+                      Jarak GPS dari toko: <strong>{activeDistance.toFixed(2)} KM</strong>
                     </p>
                   </div>
-                )}
+                ) : null}
 
                 <div>
-                  <label
-                    htmlFor="manualDistance"
-                    className="mb-2 block text-sm font-medium text-gray-700"
-                  >
+                  <label htmlFor="manualDistance" className="mb-2 block text-sm font-medium text-gray-700">
                     Input Jarak Manual Cadangan dalam KM
                   </label>
-
                   <input
                     id="manualDistance"
                     type="number"
@@ -268,10 +227,8 @@ export default function CheckoutPage() {
                     placeholder="Contoh: 3.5"
                     className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
                   />
-
                   <p className="mt-2 text-xs text-gray-500">
-                    Isi manual jika GPS gagal, ditolak, atau lokasi tidak
-                    akurat.
+                    Isi manual jika GPS gagal, ditolak, atau lokasi tidak akurat.
                   </p>
                 </div>
 
@@ -299,96 +256,58 @@ export default function CheckoutPage() {
             </div>
 
             <div className="rounded-2xl bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-xl font-semibold text-gray-900">
-                Metode Pembayaran
-              </h2>
+              <h2 className="mb-4 text-xl font-semibold text-gray-900">Metode Pembayaran</h2>
 
               <div className="grid gap-4 md:grid-cols-3">
                 <label className="cursor-pointer rounded-xl border border-gray-200 p-4 hover:border-green-500">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="QRIS"
-                      checked={paymentMethod === "QRIS"}
-                      onChange={() => {
-                        setPaymentMethod("QRIS");
-                        setCopyMessage("");
-                      }}
-                      className="h-4 w-4 accent-green-600"
-                    />
-
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        QRIS / GoPay
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Scan QRIS
-                      </p>
-                    </div>
-                  </div>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    checked={paymentMethod === "QRIS"}
+                    onChange={() => {
+                      setPaymentMethod("QRIS");
+                      setCopyMessage("");
+                    }}
+                    className="mr-2 h-4 w-4 accent-green-600"
+                  />
+                  <span className="font-semibold text-gray-900">QRIS / GoPay</span>
                 </label>
 
                 <label className="cursor-pointer rounded-xl border border-gray-200 p-4 hover:border-green-500">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="BCA"
-                      checked={paymentMethod === "BCA"}
-                      onChange={() => {
-                        setPaymentMethod("BCA");
-                        setCopyMessage("");
-                      }}
-                      className="h-4 w-4 accent-green-600"
-                    />
-
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        Transfer BCA
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Bank BCA
-                      </p>
-                    </div>
-                  </div>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    checked={paymentMethod === "BCA"}
+                    onChange={() => {
+                      setPaymentMethod("BCA");
+                      setCopyMessage("");
+                    }}
+                    className="mr-2 h-4 w-4 accent-green-600"
+                  />
+                  <span className="font-semibold text-gray-900">Transfer BCA</span>
                 </label>
 
                 <label className="cursor-pointer rounded-xl border border-gray-200 p-4 hover:border-green-500">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="MANDIRI"
-                      checked={paymentMethod === "MANDIRI"}
-                      onChange={() => {
-                        setPaymentMethod("MANDIRI");
-                        setCopyMessage("");
-                      }}
-                      className="h-4 w-4 accent-green-600"
-                    />
-
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        Transfer Mandiri
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Bank Mandiri
-                      </p>
-                    </div>
-                  </div>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    checked={paymentMethod === "MANDIRI"}
+                    onChange={() => {
+                      setPaymentMethod("MANDIRI");
+                      setCopyMessage("");
+                    }}
+                    className="mr-2 h-4 w-4 accent-green-600"
+                  />
+                  <span className="font-semibold text-gray-900">Transfer Mandiri</span>
                 </label>
               </div>
 
               <div className="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-5">
-                {paymentMethod === "QRIS" && (
+                {paymentMethod === "QRIS" ? (
                   <div className="text-center">
-                    <p className="font-bold text-gray-900">
-                      QRIS / GoPay
-                    </p>
+                    <p className="font-bold text-gray-900">QRIS / GoPay</p>
                     <p className="mt-1 text-sm text-gray-600">
-                      Silakan scan QRIS berikut menggunakan GoPay, OVO, DANA,
-                      atau mobile banking.
+                      Silakan scan QRIS berikut menggunakan GoPay, OVO, DANA, atau mobile banking.
                     </p>
                     <img
                       src="/qris-gopay.jpg"
@@ -396,9 +315,9 @@ export default function CheckoutPage() {
                       className="w-64 h-auto mx-auto mt-2 rounded-lg border"
                     />
                   </div>
-                )}
+                ) : null}
 
-                {paymentMethod === "BCA" && (
+                {paymentMethod === "BCA" ? (
                   <div>
                     <p className="font-bold text-gray-900">
                       Bank BCA — No. Rek: 4971422691 a.n Suriah
@@ -411,9 +330,9 @@ export default function CheckoutPage() {
                       Salin No. Rek
                     </button>
                   </div>
-                )}
+                ) : null}
 
-                {paymentMethod === "MANDIRI" && (
+                {paymentMethod === "MANDIRI" ? (
                   <div>
                     <p className="font-bold text-gray-900">
                       Bank Mandiri — No. Rek: 1050005833474 a.n Rowanto
@@ -426,20 +345,16 @@ export default function CheckoutPage() {
                       Salin No. Rek
                     </button>
                   </div>
-                )}
+                ) : null}
 
-                {copyMessage && (
-                  <p className="mt-3 text-sm font-medium text-green-700">
-                    {copyMessage}
-                  </p>
-                )}
+                {copyMessage !== "" ? (
+                  <p className="mt-3 text-sm font-medium text-green-700">{copyMessage}</p>
+                ) : null}
               </div>
             </div>
 
             <div className="rounded-2xl bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-xl font-semibold text-gray-900">
-                Barang & Laundry
-              </h2>
+              <h2 className="mb-4 text-xl font-semibold text-gray-900">Barang & Laundry</h2>
 
               <div className="space-y-4">
                 {cartItems.map((item) => (
@@ -448,14 +363,11 @@ export default function CheckoutPage() {
                     className="flex items-center justify-between rounded-xl border border-gray-200 p-4"
                   >
                     <div>
-                      <p className="font-semibold text-gray-900">
-                        {item.name}
-                      </p>
+                      <p className="font-semibold text-gray-900">{item.name}</p>
                       <p className="text-sm text-gray-500">
                         {item.category} • Qty: {item.qty}
                       </p>
                     </div>
-
                     <p className="font-semibold text-gray-900">
                       {formatRupiah(item.qty * item.price)}
                     </p>
@@ -466,23 +378,17 @@ export default function CheckoutPage() {
           </section>
 
           <aside className="h-fit rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-xl font-semibold text-gray-900">
-              Ringkasan Nota
-            </h2>
+            <h2 className="mb-4 text-xl font-semibold text-gray-900">Ringkasan Nota</h2>
 
             <div className="space-y-3 border-b border-gray-200 pb-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal Belanja</span>
-                <span className="font-medium text-gray-900">
-                  {formatRupiah(subtotal)}
-                </span>
+                <span className="font-medium text-gray-900">{formatRupiah(subtotal)}</span>
               </div>
 
               <div className="flex justify-between">
                 <span className="text-gray-600">Jarak Pengiriman</span>
-                <span className="font-medium text-gray-900">
-                  {activeDistance.toFixed(2)} KM
-                </span>
+                <span className="font-medium text-gray-900">{activeDistance.toFixed(2)} KM</span>
               </div>
 
               <div className="flex justify-between">
@@ -520,17 +426,17 @@ export default function CheckoutPage() {
 
             <button
               type="button"
-              disabled={!address.trim() && gpsDistance === null}
+              disabled={isCheckoutDisabled}
               className="mt-6 w-full rounded-xl bg-green-600 py-3 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
             >
               Buat Pesanan
             </button>
 
-            {!address.trim() && gpsDistance === null && (
+            {isCheckoutDisabled ? (
               <p className="mt-3 text-center text-xs text-red-500">
                 Isi alamat atau gunakan posisi GPS terlebih dahulu.
               </p>
-            )}
+            ) : null}
           </aside>
         </div>
       </div>
