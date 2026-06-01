@@ -68,8 +68,9 @@ export function CartDrawer() {
             <strong>{formatRupiah(subtotal)}</strong>
           </div>
           <p className="cart-drawer__note">
-            Total akhir termasuk ongkir dihitung di halaman checkout. Gratis antar
-            radius 2 km untuk belanja sembako min. Rp 50.000.
+            Ongkir dihitung otomatis di checkout: <strong>gratis ≤ 2 km</strong> dari
+            Jl. Sumatra No.79, lalu <strong>Rp 1.500/km</strong> untuk jarak di luar
+            radius.
           </p>
           <button
             type="button"

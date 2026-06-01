@@ -1,27 +1,20 @@
 import type { CartItem } from '@/types/cart';
 import type { ShippingFormData } from '@/types/checkout';
+import { DELIVERY } from '@/config/delivery';
+import type { DeliveryQuote } from '@/utils/delivery';
 import { formatRupiah } from './format';
-
-/** Sesuai promo di announcement bar */
-export const FREE_DELIVERY_MIN_ORDER = 50_000;
+import { formatDistanceKm } from './geo';
 
 export function getLineTotal(item: CartItem): number {
   return item.price * item.quantity;
 }
 
-export function getDeliveryFee(
-  subtotal: number,
+export function getDeliveryFeeForCheckout(
   fulfillment: ShippingFormData['fulfillment'],
+  quote: DeliveryQuote | null,
 ): number {
   if (fulfillment === 'ambil') return 0;
-  return subtotal >= FREE_DELIVERY_MIN_ORDER ? 0 : 0;
-}
-
-export function isFreeDeliveryEligible(
-  subtotal: number,
-  fulfillment: ShippingFormData['fulfillment'],
-): boolean {
-  return fulfillment === 'antar' && subtotal >= FREE_DELIVERY_MIN_ORDER;
+  return quote?.fee ?? 0;
 }
 
 export function buildWhatsAppOrderMessage(
@@ -29,6 +22,7 @@ export function buildWhatsAppOrderMessage(
   subtotal: number,
   deliveryFee: number,
   form: ShippingFormData,
+  quote: DeliveryQuote | null,
 ): string {
   const lines = items.map((item) => {
     const total = getLineTotal(item);
@@ -42,18 +36,25 @@ export function buildWhatsAppOrderMessage(
       ? 'Antar ke alamat'
       : 'Ambil sendiri di toko';
 
+  let ongkirLine = 'Pengambilan: Di toko';
+  if (form.fulfillment === 'antar' && quote) {
+    if (quote.isFree) {
+      ongkirLine = `Ongkir: GRATIS (${formatDistanceKm(quote.distanceKm)} dari toko, ≤ ${DELIVERY.freeRadiusKm} km)`;
+    } else {
+      ongkirLine = `Ongkir: ${formatRupiah(deliveryFee)} — jarak ${formatDistanceKm(quote.distanceKm)} (${quote.billableKm} km × Rp ${DELIVERY.ratePerKm.toLocaleString('id-ID')})`;
+    }
+  } else if (form.fulfillment === 'antar') {
+    ongkirLine = 'Ongkir: (belum dihitung)';
+  }
+
   return [
     'Halo Waroengku, saya ingin memesan:',
     '',
     ...lines,
     '',
     `Subtotal: ${formatRupiah(subtotal)}`,
-    form.fulfillment === 'antar'
-      ? isFreeDeliveryEligible(subtotal, form.fulfillment)
-        ? 'Ongkir: Gratis antar (radius 2 km, min. belanja terpenuhi)'
-        : 'Ongkir: Akan dikonfirmasi (min. belanja Rp 50.000 untuk gratis antar 2 km)'
-      : 'Pengambilan: Di toko',
-    `*Total estimasi: ${formatRupiah(total)}*`,
+    ongkirLine,
+    `*Total: ${formatRupiah(total)}*`,
     '',
     '--- Data pelanggan ---',
     `Nama: ${form.customerName}`,
@@ -61,6 +62,9 @@ export function buildWhatsAppOrderMessage(
     `Cara: ${fulfillmentLabel}`,
     form.fulfillment === 'antar'
       ? `Alamat: ${form.addressLine}${form.addressDetail ? `, ${form.addressDetail}` : ''}`
+      : '',
+    form.fulfillment === 'antar' && quote
+      ? `Jarak dari toko: ${formatDistanceKm(quote.distanceKm)}`
       : '',
     form.notes ? `Catatan: ${form.notes}` : '',
   ]

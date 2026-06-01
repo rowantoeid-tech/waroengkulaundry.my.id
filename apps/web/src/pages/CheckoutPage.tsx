@@ -1,334 +1,286 @@
-import { useMemo, useState, type FormEvent } from 'react';
-import { CartLineItem } from '@/components/cart/CartLineItem';
-import { CartButton } from '@/components/CartButton';
-import { CartDrawer } from '@/components/CartDrawer';
-import { useCart } from '@/context/CartContext';
-import { SITE } from '@/config/site';
-import {
-  EMPTY_SHIPPING_FORM,
-  type ShippingFormData,
-} from '@/types/checkout';
-import { formatRupiah } from '@/utils/format';
-import {
-  buildWhatsAppOrderMessage,
-  buildWhatsAppUrl,
-  FREE_DELIVERY_MIN_ORDER,
-  getDeliveryFee,
-  isFreeDeliveryEligible,
-} from '@/utils/order';
-import './CheckoutPage.css';
+import React, { useMemo, useState } from "react";
 
-type FormErrors = Partial<Record<keyof ShippingFormData, string>>;
+type CartItem = {
+  id: number;
+  name: string;
+  category: string;
+  qty: number;
+  price: number;
+};
 
-function validateForm(form: ShippingFormData): FormErrors {
-  const errors: FormErrors = {};
-  if (!form.customerName.trim()) errors.customerName = 'Nama wajib diisi';
-  if (!form.phone.trim()) errors.phone = 'Nomor HP wajib diisi';
-  else if (!/^[\d\s+\-()]{8,16}$/.test(form.phone.trim())) {
-    errors.phone = 'Format nomor tidak valid';
-  }
-  if (form.fulfillment === 'antar' && !form.addressLine.trim()) {
-    errors.addressLine = 'Alamat pengiriman wajib diisi';
-  }
-  return errors;
-}
+export default function CheckoutPage() {
+  const [address, setAddress] = useState<string>("");
+  const [distance, setDistance] = useState<number>(0);
+  const [paymentMethod, setPaymentMethod] = useState<string>("QRIS");
 
-export function CheckoutPage() {
-  const {
-    items,
-    subtotal,
-    updateQuantity,
-    removeItem,
-    goToShop,
-    itemCount,
-  } = useCart();
+  const cartItems: CartItem[] = [
+    {
+      id: 1,
+      name: "Beras Premium 5 Kg",
+      category: "Sembako",
+      qty: 1,
+      price: 68000,
+    },
+    {
+      id: 2,
+      name: "Telur Ayam 1 Kg",
+      category: "Sembako",
+      qty: 1,
+      price: 28000,
+    },
+    {
+      id: 3,
+      name: "Laundry Reguler",
+      category: "Laundry",
+      qty: 3,
+      price: 7000,
+    },
+  ];
 
-  const [form, setForm] = useState<ShippingFormData>(EMPTY_SHIPPING_FORM);
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [submitted, setSubmitted] = useState(false);
-
-  const deliveryFee = useMemo(
-    () => getDeliveryFee(subtotal, form.fulfillment),
-    [subtotal, form.fulfillment],
-  );
-
-  const total = subtotal + deliveryFee;
-  const freeDelivery = isFreeDeliveryEligible(subtotal, form.fulfillment);
-  const amountToFreeDelivery = Math.max(0, FREE_DELIVERY_MIN_ORDER - subtotal);
-
-  const hasSembako = items.some((i) => i.type === 'product');
-
-  const updateField = <K extends keyof ShippingFormData>(
-    key: K,
-    value: ShippingFormData[K],
-  ) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    setErrors((prev) => ({ ...prev, [key]: undefined }));
+  const formatRupiah = (value: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(value);
   };
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    const nextErrors = validateForm(form);
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
-      return;
+  const subtotal = useMemo(() => {
+    return cartItems.reduce((total, item) => {
+      return total + item.qty * item.price;
+    }, 0);
+  }, []);
+
+  const shippingCost = useMemo(() => {
+    if (distance <= 2) {
+      return 0;
     }
 
-    const message = buildWhatsAppOrderMessage(
-      items,
-      subtotal,
-      deliveryFee,
-      form,
-    );
-    window.open(buildWhatsAppUrl(message), '_blank', 'noopener,noreferrer');
-    setSubmitted(true);
-  };
+    return Math.ceil(distance) * 2500;
+  }, [distance]);
 
-  if (items.length === 0) {
-    return (
-      <div className="checkout checkout--empty">
-        <div className="container checkout__empty-inner">
-          <span aria-hidden>🛒</span>
-          <h1>Keranjang kosong</h1>
-          <p>Tambahkan produk sembako atau layanan laundry terlebih dahulu.</p>
-          <button type="button" className="checkout__btn-primary" onClick={goToShop}>
-            Kembali belanja
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const grandTotal = subtotal + shippingCost;
 
   return (
-    <div className="checkout">
-      <header className="checkout__topbar">
-        <div className="container checkout__topbar-inner">
-          <button type="button" className="checkout__back" onClick={goToShop}>
-            ← Kembali belanja
-          </button>
-          <span className="checkout__brand">{SITE.fullName}</span>
-          <CartButton variant="header" />
-        </div>
-      </header>
-
-      <main className="container checkout__main">
-        <header className="checkout__head">
-          <h1>Checkout & Ringkasan Pesanan</h1>
-          <p>
-            Periksa item ({itemCount} qty), isi data pengiriman, lalu kirim pesanan
-            via WhatsApp untuk konfirmasi tim kami.
+    <main className="min-h-screen bg-gray-100 px-4 py-8">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Checkout Waroengku
+          </h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Toko sembako & laundry — Jl. Sumatra No. 79, Ciputat
           </p>
         </header>
 
-        {submitted && (
-          <div className="checkout__banner checkout__banner--success" role="status">
-            Pesanan terbuka di WhatsApp. Tim Waroengku akan membalas untuk konfirmasi
-            stok, ongkir, dan jadwal.
+        <div className="grid gap-6 lg:grid-cols-3">
+          <section className="space-y-6 lg:col-span-2">
+            <div className="rounded-2xl bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-xl font-semibold text-gray-900">
+                Alamat & Jarak Pengiriman
+              </h2>
+
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="address"
+                    className="mb-2 block text-sm font-medium text-gray-700"
+                  >
+                    Alamat Pelanggan
+                  </label>
+
+                  <textarea
+                    id="address"
+                    value={address}
+                    onChange={(event) => setAddress(event.target.value)}
+                    rows={4}
+                    placeholder="Masukkan alamat lengkap pelanggan"
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="distance"
+                    className="mb-2 block text-sm font-medium text-gray-700"
+                  >
+                    Simulasi Jarak dari Toko dalam KM
+                  </label>
+
+                  <input
+                    id="distance"
+                    type="number"
+                    min={0}
+                    step={0.1}
+                    value={distance}
+                    onChange={(event) =>
+                      setDistance(Number(event.target.value))
+                    }
+                    placeholder="Contoh: 3.5"
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  />
+                </div>
+
+                <div
+                  className={`rounded-xl p-4 text-sm ${
+                    shippingCost === 0
+                      ? "bg-green-50 text-green-700"
+                      : "bg-yellow-50 text-yellow-700"
+                  }`}
+                >
+                  {shippingCost === 0 ? (
+                    <p>Ongkir gratis untuk jarak maksimal 2 KM dari toko.</p>
+                  ) : (
+                    <p>
+                      Ongkir dikenakan {formatRupiah(2500)} per KM karena jarak
+                      lebih dari 2 KM.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-xl font-semibold text-gray-900">
+                Metode Pembayaran
+              </h2>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="cursor-pointer rounded-xl border border-gray-200 p-4 hover:border-green-500">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="QRIS"
+                      checked={paymentMethod === "QRIS"}
+                      onChange={(event) =>
+                        setPaymentMethod(event.target.value)
+                      }
+                      className="h-4 w-4 accent-green-600"
+                    />
+
+                    <div>
+                      <p className="font-semibold text-gray-900">QRIS</p>
+                      <p className="text-sm text-gray-500">
+                        Gopay, OVO, Dana
+                      </p>
+                    </div>
+                  </div>
+                </label>
+
+                <label className="cursor-pointer rounded-xl border border-gray-200 p-4 hover:border-green-500">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="Virtual Account"
+                      checked={paymentMethod === "Virtual Account"}
+                      onChange={(event) =>
+                        setPaymentMethod(event.target.value)
+                      }
+                      className="h-4 w-4 accent-green-600"
+                    />
+
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        Virtual Account
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        BCA, Mandiri, BRI
+                      </p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-xl font-semibold text-gray-900">
+                Barang & Laundry
+              </h2>
+
+              <div className="space-y-4">
+                {cartItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between rounded-xl border border-gray-200 p-4"
+                  >
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {item.name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {item.category} • Qty: {item.qty}
+                      </p>
+                    </div>
+
+                    <p className="font-semibold text-gray-900">
+                      {formatRupiah(item.qty * item.price)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <aside className="h-fit rounded-2xl bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-xl font-semibold text-gray-900">
+              Ringkasan Nota
+            </h2>
+
+            <div className="space-y-3 border-b border-gray-200 pb-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Subtotal</span>
+                <span className="font-medium text-gray-900">
+                  {formatRupiah(subtotal)}
+                </span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-gray-600">Jarak</span>
+                <span className="font-medium text-gray-900">
+                  {distance} KM
+                </span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-gray-600">Ongkir</span>
+                <span className="font-medium text-gray-900">
+                  {shippingCost === 0
+                    ? "Gratis"
+                    : formatRupiah(shippingCost)}
+                </span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-gray-600">Pembayaran</span>
+                <span className="font-medium text-gray-900">
+                  {paymentMethod}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-4 flex justify-between text-lg font-bold text-gray-900">
+              <span>Total</span>
+              <span>{formatRupiah(grandTotal)}</span>
+            </div>
+
             <button
               type="button"
-              className="checkout__banner-dismiss"
-              onClick={() => setSubmitted(false)}
+              disabled={!address.trim()}
+              className="mt-6 w-full rounded-xl bg-green-600 py-3 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
             >
-              Tutup
+              Buat Pesanan
             </button>
-          </div>
-        )}
 
-        <div className="checkout__grid">
-          <section className="checkout__panel" aria-labelledby="order-summary-title">
-            <h2 id="order-summary-title">Ringkasan pesanan</h2>
-
-            <ul className="checkout__items">
-              {items.map((item) => (
-                <CartLineItem
-                  key={`${item.type}-${item.id}`}
-                  item={item}
-                  compact
-                  onUpdateQuantity={(qty) =>
-                    updateQuantity(item.id, item.type, qty)
-                  }
-                  onRemove={() => removeItem(item.id, item.type)}
-                />
-              ))}
-            </ul>
-
-            <dl className="checkout__totals">
-              <div>
-                <dt>Subtotal</dt>
-                <dd>{formatRupiah(subtotal)}</dd>
-              </div>
-              <div>
-                <dt>
-                  {form.fulfillment === 'ambil'
-                    ? 'Pengambilan'
-                    : 'Ongkir antar'}
-                </dt>
-                <dd>
-                  {form.fulfillment === 'ambil'
-                    ? 'Ambil di toko'
-                    : freeDelivery
-                      ? 'Gratis (radius 2 km)'
-                      : 'Dikonfirmasi via WA'}
-                </dd>
-              </div>
-              <div className="checkout__totals-grand">
-                <dt>Total estimasi</dt>
-                <dd>{formatRupiah(total)}</dd>
-              </div>
-            </dl>
-
-            {form.fulfillment === 'antar' && hasSembako && !freeDelivery && (
-              <p className="checkout__promo-hint">
-                Tambah {formatRupiah(amountToFreeDelivery)} lagi untuk gratis antar
-                sembako radius 2 km (min. {formatRupiah(FREE_DELIVERY_MIN_ORDER)}).
+            {!address.trim() && (
+              <p className="mt-3 text-center text-xs text-red-500">
+                Isi alamat pelanggan terlebih dahulu.
               </p>
             )}
-
-            {freeDelivery && (
-              <p className="checkout__promo-hint checkout__promo-hint--ok">
-                ✓ Anda mendapat gratis antar sembako (radius 2 km).
-              </p>
-            )}
-          </section>
-
-          <section className="checkout__panel checkout__panel--form">
-            <h2>Data pengiriman</h2>
-
-            <form className="checkout__form" onSubmit={handleSubmit} noValidate>
-              <fieldset className="checkout__fulfillment">
-                <legend>Cara terima pesanan</legend>
-                <label
-                  className={`checkout__radio ${
-                    form.fulfillment === 'antar' ? 'checkout__radio--active' : ''
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="fulfillment"
-                    value="antar"
-                    checked={form.fulfillment === 'antar'}
-                    onChange={() => updateField('fulfillment', 'antar')}
-                  />
-                  <span>
-                    <strong>Antar ke alamat</strong>
-                    <small>Gratis radius 2 km jika belanja sembako ≥ Rp 50.000</small>
-                  </span>
-                </label>
-                <label
-                  className={`checkout__radio ${
-                    form.fulfillment === 'ambil' ? 'checkout__radio--active' : ''
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="fulfillment"
-                    value="ambil"
-                    checked={form.fulfillment === 'ambil'}
-                    onChange={() => updateField('fulfillment', 'ambil')}
-                  />
-                  <span>
-                    <strong>Ambil sendiri di toko</strong>
-                    <small>{SITE.addressShort}</small>
-                  </span>
-                </label>
-              </fieldset>
-
-              <div className="checkout__field">
-                <label htmlFor="customerName">Nama lengkap *</label>
-                <input
-                  id="customerName"
-                  type="text"
-                  autoComplete="name"
-                  value={form.customerName}
-                  onChange={(e) => updateField('customerName', e.target.value)}
-                  placeholder="Contoh: Budi Santoso"
-                />
-                {errors.customerName && (
-                  <span className="checkout__error">{errors.customerName}</span>
-                )}
-              </div>
-
-              <div className="checkout__field">
-                <label htmlFor="phone">Nomor WhatsApp / HP *</label>
-                <input
-                  id="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  value={form.phone}
-                  onChange={(e) => updateField('phone', e.target.value)}
-                  placeholder="08123456789"
-                />
-                {errors.phone && (
-                  <span className="checkout__error">{errors.phone}</span>
-                )}
-              </div>
-
-              {form.fulfillment === 'antar' && (
-                <>
-                  <div className="checkout__field">
-                    <label htmlFor="addressLine">Alamat pengiriman *</label>
-                    <textarea
-                      id="addressLine"
-                      rows={3}
-                      autoComplete="street-address"
-                      value={form.addressLine}
-                      onChange={(e) => updateField('addressLine', e.target.value)}
-                      placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan"
-                    />
-                    {errors.addressLine && (
-                      <span className="checkout__error">{errors.addressLine}</span>
-                    )}
-                  </div>
-
-                  <div className="checkout__field">
-                    <label htmlFor="addressDetail">
-                      Patokan / detail tambahan (opsional)
-                    </label>
-                    <input
-                      id="addressDetail"
-                      type="text"
-                      value={form.addressDetail}
-                      onChange={(e) => updateField('addressDetail', e.target.value)}
-                      placeholder="Dekat warung, warna pagar, lantai, dll."
-                    />
-                  </div>
-                </>
-              )}
-
-              <div className="checkout__field">
-                <label htmlFor="notes">Catatan pesanan (opsional)</label>
-                <textarea
-                  id="notes"
-                  rows={2}
-                  value={form.notes}
-                  onChange={(e) => updateField('notes', e.target.value)}
-                  placeholder="Mis. cucian express, minta bon, waktu antar sore"
-                />
-              </div>
-
-              <div className="checkout__form-actions">
-                <button type="submit" className="checkout__btn-primary">
-                  Kirim pesanan via WhatsApp
-                </button>
-                <button
-                  type="button"
-                  className="checkout__btn-secondary"
-                  onClick={goToShop}
-                >
-                  Tambah item lain
-                </button>
-              </div>
-
-              <p className="checkout__fine">
-                Dengan mengirim, Anda setuju harga final dikonfirmasi oleh kasir
-                (stok & ongkir). Buka {SITE.hours}.
-              </p>
-            </form>
-          </section>
+          </aside>
         </div>
-      </main>
-
-      <CartDrawer />
-    </div>
+      </div>
+    </main>
   );
 }
