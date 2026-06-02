@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 
 type PaymentMethod = "QRIS" | "BCA" | "MANDIRI";
 type LocationStatus = "idle" | "loading" | "success" | "error";
@@ -10,41 +10,18 @@ type CartItem = {
   price: number;
 };
 
-const STORE_LATITUDE = -6.2917;
-const STORE_LONGITUDE = 106.7058;
-const FREE_DISTANCE_KM = 2;
-const SHIPPING_RATE_PER_KM = 2500;
+const CheckoutPage = () => {
+  const STORE_LATITUDE = -6.2917;
+  const STORE_LONGITUDE = 106.7058;
 
-export default function CheckoutPage() {
   const [address, setAddress] = useState<string>("");
-  const [manualDistance, setManualDistance] = useState<number | "">("");
   const [gpsDistance, setGpsDistance] = useState<number | null>(null);
+  const [manualDistance, setManualDistance] = useState<number | "">("");
   const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
   const [locationMessage, setLocationMessage] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("QRIS");
 
-  const cartItems: CartItem[] = [
-    {
-      id: 1,
-      name: "Beras Premium 5 Kg",
-      qty: 1,
-      price: 68000,
-    },
-    {
-      id: 2,
-      name: "Telur Ayam 1 Kg",
-      qty: 1,
-      price: 28000,
-    },
-    {
-      id: 3,
-      name: "Laundry Reguler 3 Kg",
-      qty: 1,
-      price: 21000,
-    },
-  ];
-
-  const formatRupiah = (value: number): string => {
+  const formatRupiah = (value: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
@@ -52,17 +29,37 @@ export default function CheckoutPage() {
     }).format(value);
   };
 
+  const cartItems: CartItem[] = [
+    { id: 1, name: "Beras Premium 5 Kg", qty: 1, price: 68000 },
+    { id: 2, name: "Telur Ayam 1 Kg", qty: 1, price: 28000 },
+    { id: 3, name: "Laundry Reguler 3 Kg", qty: 1, price: 21000 },
+  ];
+
+  const activeDistance =
+    gpsDistance !== null
+      ? gpsDistance
+      : typeof manualDistance === "number"
+      ? manualDistance
+      : 0;
+
+  const ongkir = activeDistance <= 2 ? 0 : activeDistance * 2500;
+
+  const subtotal = cartItems.reduce((total, item) => {
+    return total + item.qty * item.price;
+  }, 0);
+
+  const totalEstimasi = subtotal + ongkir;
+
+  const isCheckoutDisabled = address.trim() === "" && gpsDistance === null;
+
   const calculateDistanceKm = (
     lat1: number,
     lon1: number,
     lat2: number,
     lon2: number
-  ): number => {
+  ) => {
     const earthRadiusKm = 6371;
-
-    const toRadians = (degree: number): number => {
-      return degree * (Math.PI / 180);
-    };
+    const toRadians = (degree: number) => degree * (Math.PI / 180);
 
     const dLat = toRadians(lat2 - lat1);
     const dLon = toRadians(lon2 - lon1);
@@ -81,36 +78,27 @@ export default function CheckoutPage() {
 
   const handleManualDistanceChange = (
     event: React.ChangeEvent<HTMLInputElement>
-  ): void => {
+  ) => {
     const value = event.target.value;
 
     if (value === "") {
       setManualDistance("");
       setGpsDistance(null);
-      setLocationStatus("idle");
       setLocationMessage("");
+      setLocationStatus("idle");
       return;
     }
 
-    const numericValue = Number(value);
-
-    if (Number.isNaN(numericValue)) {
-      setManualDistance("");
-      return;
-    }
-
-    setManualDistance(numericValue);
+    setManualDistance(Number(value));
     setGpsDistance(null);
-    setLocationStatus("idle");
     setLocationMessage("Menggunakan jarak manual.");
+    setLocationStatus("idle");
   };
 
-  const handleUseCurrentLocation = (): void => {
+  const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) {
       setLocationStatus("error");
-      setLocationMessage(
-        "Browser tidak mendukung GPS. Silakan isi jarak manual."
-      );
+      setLocationMessage("Browser tidak mendukung GPS.");
       return;
     }
 
@@ -119,26 +107,24 @@ export default function CheckoutPage() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const customerLat = position.coords.latitude;
-        const customerLon = position.coords.longitude;
+        const userLat = position.coords.latitude;
+        const userLon = position.coords.longitude;
 
         const distance = calculateDistanceKm(
           STORE_LATITUDE,
           STORE_LONGITUDE,
-          customerLat,
-          customerLon
+          userLat,
+          userLon
         );
 
         setGpsDistance(Number(distance.toFixed(2)));
         setLocationStatus("success");
-        setLocationMessage(
-          "Lokasi berhasil didapatkan. Ongkir otomatis diperbarui."
-        );
+        setLocationMessage("Lokasi berhasil didapatkan. Ongkir diperbarui.");
       },
       () => {
         setGpsDistance(null);
         setLocationStatus("error");
-        setLocationMessage("GPS ditolak atau gagal. Silakan isi jarak manual.");
+        setLocationMessage("GPS ditolak. Silakan isi jarak manual.");
       },
       {
         enableHighAccuracy: true,
@@ -148,29 +134,6 @@ export default function CheckoutPage() {
     );
   };
 
-  const activeDistance: number =
-    gpsDistance !== null
-      ? gpsDistance
-      : manualDistance === ""
-      ? 0
-      : manualDistance;
-
-  const subtotal = useMemo(() => {
-    return cartItems.reduce((total, item) => {
-      return total + item.qty * item.price;
-    }, 0);
-  }, []);
-
-  const ongkir = useMemo(() => {
-    if (activeDistance <= FREE_DISTANCE_KM) {
-      return 0;
-    }
-
-    return activeDistance * SHIPPING_RATE_PER_KM;
-  }, [activeDistance]);
-
-  const totalEstimasi = subtotal + ongkir;
-  const isCheckoutDisabled = address.trim() === "" && gpsDistance === null;
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-8">
       <div className="mx-auto max-w-6xl">
@@ -213,7 +176,7 @@ export default function CheckoutPage() {
                   type="button"
                   onClick={handleUseCurrentLocation}
                   disabled={locationStatus === "loading"}
-                  className="w-full rounded-xl bg-green-600 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                  className="w-full rounded-xl bg-green-600 px-4 py-3 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                 >
                   {locationStatus === "loading"
                     ? "Mengambil Posisi..."
@@ -239,7 +202,7 @@ export default function CheckoutPage() {
                     htmlFor="manualDistance"
                     className="mb-2 block text-sm font-medium text-gray-700"
                   >
-                    Jarak Manual Cadangan dalam KM
+                    Jarak Manual dalam KM
                   </label>
 
                   <input
@@ -428,4 +391,6 @@ export default function CheckoutPage() {
       </div>
     </main>
   );
-}
+};
+
+export default CheckoutPage;
