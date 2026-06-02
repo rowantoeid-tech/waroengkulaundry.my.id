@@ -17,16 +17,31 @@ const SHIPPING_RATE_PER_KM = 2500;
 
 export default function CheckoutPage() {
   const [address, setAddress] = useState<string>("");
-  const [manualDistance, setManualDistance] = useState<number>(0);
+  const [manualDistance, setManualDistance] = useState<number | "">("");
   const [gpsDistance, setGpsDistance] = useState<number | null>(null);
   const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
   const [locationMessage, setLocationMessage] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("QRIS");
 
   const cartItems: CartItem[] = [
-    { id: 1, name: "Beras Premium 5 Kg", qty: 1, price: 68000 },
-    { id: 2, name: "Telur Ayam 1 Kg", qty: 1, price: 28000 },
-    { id: 3, name: "Laundry Reguler 3 Kg", qty: 1, price: 21000 },
+    {
+      id: 1,
+      name: "Beras Premium 5 Kg",
+      qty: 1,
+      price: 68000,
+    },
+    {
+      id: 2,
+      name: "Telur Ayam 1 Kg",
+      qty: 1,
+      price: 28000,
+    },
+    {
+      id: 3,
+      name: "Laundry Reguler 3 Kg",
+      qty: 1,
+      price: 21000,
+    },
   ];
 
   const formatRupiah = (value: number): string => {
@@ -44,7 +59,10 @@ export default function CheckoutPage() {
     lon2: number
   ): number => {
     const earthRadiusKm = 6371;
-    const toRadians = (degree: number) => degree * (Math.PI / 180);
+
+    const toRadians = (degree: number): number => {
+      return degree * (Math.PI / 180);
+    };
 
     const dLat = toRadians(lat2 - lat1);
     const dLon = toRadians(lon2 - lon1);
@@ -61,29 +79,38 @@ export default function CheckoutPage() {
     return earthRadiusKm * c;
   };
 
-  const activeDistance = gpsDistance !== null ? gpsDistance : manualDistance;
+  const handleManualDistanceChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ): void => {
+    const value = event.target.value;
 
-  const subtotal = useMemo(() => {
-    return cartItems.reduce((total, item) => {
-      return total + item.qty * item.price;
-    }, 0);
-  }, [cartItems]);
-
-  const ongkir = useMemo(() => {
-    if (activeDistance <= FREE_DISTANCE_KM) {
-      return 0;
+    if (value === "") {
+      setManualDistance("");
+      setGpsDistance(null);
+      setLocationStatus("idle");
+      setLocationMessage("");
+      return;
     }
 
-    return Math.ceil(activeDistance) * SHIPPING_RATE_PER_KM;
-  }, [activeDistance]);
+    const numericValue = Number(value);
 
-  const totalEstimasi = subtotal + ongkir;
-  const isCheckoutDisabled = address.trim() === "" && gpsDistance === null;
+    if (Number.isNaN(numericValue)) {
+      setManualDistance("");
+      return;
+    }
+
+    setManualDistance(numericValue);
+    setGpsDistance(null);
+    setLocationStatus("idle");
+    setLocationMessage("Menggunakan jarak manual.");
+  };
 
   const handleUseCurrentLocation = (): void => {
     if (!navigator.geolocation) {
       setLocationStatus("error");
-      setLocationMessage("Browser tidak mendukung GPS. Silakan isi jarak manual.");
+      setLocationMessage(
+        "Browser tidak mendukung GPS. Silakan isi jarak manual."
+      );
       return;
     }
 
@@ -104,7 +131,9 @@ export default function CheckoutPage() {
 
         setGpsDistance(Number(distance.toFixed(2)));
         setLocationStatus("success");
-        setLocationMessage("Lokasi berhasil didapatkan. Ongkir otomatis diperbarui.");
+        setLocationMessage(
+          "Lokasi berhasil didapatkan. Ongkir otomatis diperbarui."
+        );
       },
       () => {
         setGpsDistance(null);
@@ -119,17 +148,29 @@ export default function CheckoutPage() {
     );
   };
 
-  const handleManualDistanceChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ): void => {
-    const value = Number(event.target.value);
+  const activeDistance: number =
+    gpsDistance !== null
+      ? gpsDistance
+      : manualDistance === ""
+      ? 0
+      : manualDistance;
 
-    setManualDistance(value);
-    setGpsDistance(null);
-    setLocationStatus("idle");
-    setLocationMessage("Menggunakan jarak manual.");
-  };
+  const subtotal = useMemo(() => {
+    return cartItems.reduce((total, item) => {
+      return total + item.qty * item.price;
+    }, 0);
+  }, []);
 
+  const ongkir = useMemo(() => {
+    if (activeDistance <= FREE_DISTANCE_KM) {
+      return 0;
+    }
+
+    return activeDistance * SHIPPING_RATE_PER_KM;
+  }, [activeDistance]);
+
+  const totalEstimasi = subtotal + ongkir;
+  const isCheckoutDisabled = address.trim() === "" && gpsDistance === null;
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-8">
       <div className="mx-auto max-w-6xl">
@@ -157,6 +198,7 @@ export default function CheckoutPage() {
                   >
                     Alamat Pengiriman
                   </label>
+
                   <textarea
                     id="address"
                     rows={4}
@@ -178,7 +220,7 @@ export default function CheckoutPage() {
                     : "📍 Gunakan Posisi Saya Saat Ini"}
                 </button>
 
-                {locationMessage !== "" ? (
+                {locationMessage !== "" && (
                   <div
                     className={`rounded-xl p-4 text-sm ${
                       locationStatus === "success"
@@ -188,9 +230,9 @@ export default function CheckoutPage() {
                         : "bg-blue-50 text-blue-700"
                     }`}
                   >
-                    {locationMessage}
+                    <p>{locationMessage}</p>
                   </div>
-                ) : null}
+                )}
 
                 <div>
                   <label
@@ -199,6 +241,7 @@ export default function CheckoutPage() {
                   >
                     Jarak Manual Cadangan dalam KM
                   </label>
+
                   <input
                     id="manualDistance"
                     type="number"
@@ -273,7 +316,7 @@ export default function CheckoutPage() {
               </div>
 
               <div className="mt-5 rounded-xl border bg-gray-50 p-5">
-                {paymentMethod === "QRIS" ? (
+                {paymentMethod === "QRIS" && (
                   <div className="text-center">
                     <p className="font-bold text-gray-900">QRIS / GoPay</p>
                     <img
@@ -282,19 +325,19 @@ export default function CheckoutPage() {
                       className="w-64 h-auto mx-auto mt-2 rounded-lg"
                     />
                   </div>
-                ) : null}
+                )}
 
-                {paymentMethod === "BCA" ? (
+                {paymentMethod === "BCA" && (
                   <p className="font-bold text-gray-900">
                     Bank BCA — No. Rek: 4971422691 a.n Suriah
                   </p>
-                ) : null}
+                )}
 
-                {paymentMethod === "MANDIRI" ? (
+                {paymentMethod === "MANDIRI" && (
                   <p className="font-bold text-gray-900">
                     Bank Mandiri — No. Rek: 1050005833474 a.n Rowanto
                   </p>
-                ) : null}
+                )}
               </div>
             </div>
 
@@ -313,6 +356,7 @@ export default function CheckoutPage() {
                       <p className="font-semibold text-gray-900">{item.name}</p>
                       <p className="text-sm text-gray-500">Qty: {item.qty}</p>
                     </div>
+
                     <p className="font-semibold text-gray-900">
                       {formatRupiah(item.qty * item.price)}
                     </p>
@@ -335,7 +379,9 @@ export default function CheckoutPage() {
 
               <div className="flex justify-between">
                 <span className="text-gray-600">Jarak</span>
-                <span className="font-medium">{activeDistance.toFixed(2)} KM</span>
+                <span className="font-medium">
+                  {activeDistance.toFixed(2)} KM
+                </span>
               </div>
 
               <div className="flex justify-between">
@@ -372,11 +418,11 @@ export default function CheckoutPage() {
               Buat Pesanan
             </button>
 
-            {isCheckoutDisabled ? (
+            {isCheckoutDisabled && (
               <p className="mt-3 text-center text-xs text-red-500">
                 Isi alamat atau gunakan posisi GPS terlebih dahulu.
               </p>
-            ) : null}
+            )}
           </aside>
         </form>
       </div>
